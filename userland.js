@@ -1,38 +1,24 @@
+var sc;
 var p;
-var print = function (x) {
-  document.getElementById("console").innerText += x + "\n";
-};
-var print = function (string) {
-  document.getElementById("console").innerHTML += string + "\n";
+var print = x => document.getElementById("console").innerText += x + "\n";
+
+// Utility for getting syscall addresses
+var get_jmptgt = function (addr) {
+  var z = p.read4(addr) & 0xFFFF;
+  var y = p.read4(addr.add32(2));
+  if (z !== 0x25ff) return 0;
+  return addr.add32(y + 6);
 };
 
-window.stage2 = function () {
-  try {
-    window.stage2_();
-  } catch (e) {
-    print("Stage2 error: " + e);
+// Clean kernel check + postExpl trigger
+setTimeout(() => {
+  var test = p.syscall("sys_setuid", 0);
+
+  if (test !== '0') {
+    sc = document.createElement("script");
+    sc.src = "kernel.js";
+    document.body.appendChild(sc);
+  } else {
+    window.postExpl(); // ✅ Call the payload stage
   }
-};
-
-window.stage2_ = function () {
-  p = window.prim;
-
-  const code_addr = new int64(0x26100000, 0x00000009);
-  const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
-
-  if (buffer.low !== 0x26100000 || buffer.hi !== 0x00000009) {
-    alert("❌ sys_mmap failed.");
-    return;
-  }
-
-  fetch("goldhen.bin")
-    .then(resp => resp.arrayBuffer())
-    .then(buffer => {
-      const payload = new Uint8Array(buffer);
-      for (let i = 0; i < payload.length; i++) {
-        p.write1(code_addr.add32(i), payload[i]);
-      }
-      p.fcall(code_addr); // Launch GoldHEN
-    })
-    .catch(err => alert("❌ Failed to load GoldHEN payload: " + err));
-};
+}, 100);
