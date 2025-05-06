@@ -2374,7 +2374,7 @@ function send_payload(filename) {
 
   req.onload = function () {
     var payload = new Uint8Array(req.response);
-    var socket = new WebSocket("ws://" + "192.168.50.120" + ":9020/");
+    var socket = new WebSocket("ws://192.168.50.120:9020/");
     socket.binaryType = "arraybuffer";
 
     socket.onopen = function () {
