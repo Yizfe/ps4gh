@@ -2367,11 +2367,32 @@ function writeHomebrewEN(p, addr) {
   p.write4(addr.add32(0x000024f4), 0x0066746e);
 }
 
-try {
-  send_payload("GoldHEN_2.4b18.3.bin", function () {
-    alert("✅ GoldHEN payload sent successfully!");
-  });
-} catch (e) {
-  alert("❌ Payload send failed: " + e);
+function send_payload(filename) {
+  var req = new XMLHttpRequest();
+  req.open("GET", filename, true);
+  req.responseType = "arraybuffer";
+
+  req.onload = function () {
+    var payload = new Uint8Array(req.response);
+    var socket = new WebSocket("ws://" + location.hostname + ":9020/");
+    socket.binaryType = "arraybuffer";
+
+    socket.onopen = function () {
+      socket.send(payload);
+      socket.close();
+      alert("✅ GoldHEN payload sent successfully!");
+    };
+
+    socket.onerror = function () {
+      alert("❌ WebSocket connection failed. Make sure PS4 is awaiting payload.");
+    };
+  };
+
+  req.onerror = function () {
+    alert("❌ Failed to fetch payload file: " + filename);
+  };
+
+  req.send();
 }
+
 
