@@ -1,12 +1,11 @@
 function send_payload(fileName) {
-  const ip = "192.168.50.120"; // ✅ Replace with your actual PC IP if different
+  const ip = "192.168.50.47"; // ✅ Change this to your PC's IP if needed
   const port = 9020;
-  const url = `ws://${ip}:${port}/send`;
-  const ws = new WebSocket(url);
-
+  const ws = new WebSocket(`ws://${ip}:${port}/send`);
   ws.binaryType = "arraybuffer";
 
   ws.onopen = () => {
+    console.log("[INFO] WebSocket connection open");
     fetch(fileName)
       .then(response => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -14,16 +13,15 @@ function send_payload(fileName) {
       })
       .then(payload => {
         ws.send(payload);
+        console.log("[INFO] Payload sent successfully");
         ws.close();
       })
       .catch(err => {
-        console.error("❌ Failed to send payload:", err);
-        fail(); // Call fail UI if something breaks
+        fail("Payload send error: " + err.message);
       });
   };
 
-  ws.onerror = (e) => {
-    console.error("❌ WebSocket error:", e);
-    fail(); // Trigger UI fail state
+  ws.onerror = () => {
+    fail("WebSocket error. Make sure port 9020 is open and sender is running.");
   };
 }
