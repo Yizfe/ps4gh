@@ -63,6 +63,7 @@
       if (window.didpost == 1)
         setTimeout(window.stage2, 1500);
     }
+
     window.postExpl = function () {
       window.didpost = 1;
       if (window.didload == 1)
@@ -77,19 +78,19 @@
     function awaitpl() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("awaiting").style.display = "block";
+
+      // ✅ Now triggers payload when you see "Awaiting Payload..."
+      if (typeof send_payload === "function") {
+        send_payload("GoldHEN_2.4b18.3.bin");
+      } else {
+        alert("❌ Payload sender not found.");
+      }
     }
 
     function fail(info) {
       document.getElementById("loader").style.display = "none";
       document.getElementById("fail").style.display = "block";
     }
-
-    // Auto-start the payload load (this should trigger in homebrew.js)
-    window.onload = function () {
-      if (typeof send_payload === "function") {
-        send_payload("GoldHEN_2.4b18.3.bin");
-      }
-    };
   </script>
 
   <div id="loader" class="loader"></div>
