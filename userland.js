@@ -419,6 +419,9 @@ if (attempts >= 10000) {
 }
 
 
+if (buffer == '926100000') {
+  writeGoldHEN(p, code_addr);
+}
 
 
 
