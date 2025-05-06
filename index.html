@@ -9,44 +9,32 @@
       left: 50%;
       top: 50%;
       margin: -75px 0 0 -75px;
-
       border: 10px solid #f3f3f3;
       border-radius: 50%;
       border-top: 10px solid #044595;
       border-left: 10px solid #044595;
       width: 120px;
       height: 120px;
-
       -webkit-animation: spin 1s linear infinite;
     }
-
     .info {
-      overflow: hidden;
-      position: fixed;
       position: absolute;
       top: 50%;
       left: 50%;
-
       font-size: 45px;
       font-family: sans-serif;
-
       transform: translate(-50%, -50%);
+      display: none;
     }
-
     .credits {
-      overflow: hidden;
-      position: fixed;
       position: absolute;
       top: 90%;
       left: 50%;
-
       font-size: 16px;
       font-family: sans-serif;
       text-align: center;
-
       transform: translate(-50%, -90%);
     }
-
     @-webkit-keyframes spin {
       0% { -webkit-transform: rotate(0deg); }
       100% { -webkit-transform: rotate(360deg); }
@@ -54,66 +42,59 @@
   </style>
 </head>
 <body style="margin:0;">
-  <script>
-    window.didload = 0;
-    window.didpost = 0;
-
-    window.onload = function () {
-      window.didload = 1;
-      if (window.didpost == 1)
-        setTimeout(window.stage2, 1500);
-    }
-    window.postExpl = function () {
-      window.didpost = 1;
-      if (window.didload == 1)
-        setTimeout(window.stage2, 1500);
-    }
-
-    function allset() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("allset").style.display = "block";
-    }
-
-    function awaitpl() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("awaiting").style.display = "block";
-    }
-
-    function fail(info) {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("fail").style.display = "block";
-    }
-  </script>
-
   <div id="loader" class="loader"></div>
-
-  <div id="awaiting" class="info" style="display:none;">
-    Awaiting Payload...
-  </div>
-
-  <div id="allset" class="info" style="display:none;">
-    You're all set!
-  </div>
-
-  <div id="fail" class="info" style="display:none;">
-    Something went wrong :(
-  </div>
-
-  <div id="badfw" class="info" style="display:none;">
-    Only firmware 5.05 is supported!
-  </div>
+  <div id="awaiting" class="info">Awaiting Payload...</div>
+  <div id="allset" class="info">You're all set!</div>
+  <div id="fail" class="info">Something went wrong :(</div>
 
   <div id="footer" class="credits">
-  <ul style="list-style: none; padding-left: 0;">
-    <li><strong>Made by @Yizfe</strong></li>
-  </ul>
-</div>
+    <ul style="list-style: none; padding-left: 0;">
+      <li><strong>Made by @Yizfe</strong></li>
+    </ul>
+  </div>
 
+  <script>
+    function show(id) {
+      ["loader", "awaiting", "allset", "fail"].forEach(i => {
+        document.getElementById(i).style.display = (i === id) ? "block" : "none";
+      });
+    }
+
+    function allset() { show("allset"); }
+    function awaitpl() { show("awaiting"); }
+    function fail() { show("fail"); }
+
+    window.onload = () => {
+      window.didload = true;
+      if (window.didpost) setTimeout(stage2, 1500);
+    };
+
+    window.postExpl = () => {
+      window.didpost = true;
+      if (window.didload) setTimeout(stage2, 1500);
+    };
+
+    async function stage2() {
+      try {
+        const code_addr = new int64(0x26100000, 0x00000009);
+        const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
+        if (buffer.toString() !== "926100000") return fail();
+
+        awaitpl();
+        await send_payload("goldhen.bin");
+        p.fcall(code_addr);
+        allset();
+      } catch (e) {
+        console.error(e);
+        fail();
+      }
+    }
+  </script>
 
   <script src="./rop.js"></script>
   <script src="./syscalls.js"></script>
   <script src="./expl.js"></script>
   <script src="./userland.js"></script>
-  <pre id="console"></pre>
+  <script src="./payload.js"></script>
 </body>
 </html>
