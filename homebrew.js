@@ -2368,12 +2368,16 @@ function writeHomebrewEN(p, addr) {
 }
 
 function send_payload(filename) {
+  console.log("Sending payload to PS4...");
+
   var req = new XMLHttpRequest();
   req.open("GET", filename, true);
   req.responseType = "arraybuffer";
 
   req.onload = function () {
     var payload = new Uint8Array(req.response);
+    
+    // Replace with your PC's LAN IP
     var socket = new WebSocket("ws://192.168.50.120:9020/");
     socket.binaryType = "arraybuffer";
 
@@ -2384,12 +2388,12 @@ function send_payload(filename) {
     };
 
     socket.onerror = function () {
-      alert("❌ WebSocket connection failed. Make sure PS4 is awaiting payload.");
+      alert("❌ WebSocket failed. Is your PS4 listening and your PC running Exploit Host?");
     };
   };
 
   req.onerror = function () {
-    alert("❌ Failed to fetch payload file: " + filename);
+    alert("❌ Failed to fetch payload: " + filename);
   };
 
   req.send();
