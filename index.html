@@ -25,6 +25,7 @@
       font-size: 45px;
       font-family: sans-serif;
       transform: translate(-50%, -50%);
+      text-align: center;
     }
     .credits {
       position: fixed;
@@ -63,41 +64,72 @@
     try {
       awaitpl();
     } catch (e) {
-      alert("Stage2 error: " + e);
-      fail();
+      setFail(`Stage2 Error: ${e}`);
     }
   }
 
   async function awaitpl() {
-    document.getElementById("loader").style.display = "none";
-    document.getElementById("awaiting").style.display = "block";
+    showState("awaiting");
 
     try {
       const code_addr = new int64(0x26100000, 0x00000009);
       const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
       if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) {
-        fail();
+        setFail("sys_mmap failed.");
         return;
       }
 
-      await send_payload("goldhen.bin");
-      p.fcall(code_addr); // Launch GoldHEN
-      allset();
+      const result = await send_payload("goldhen.bin", code_addr);
+      if (result.success) {
+        p.fcall(code_addr);
+        showState("allset");
+      } else {
+        setFail(result.message);
+      }
     } catch (e) {
-      alert("❌ Payload launch error: " + e);
-      fail();
+      setFail(`Payload Launch Error: ${e}`);
     }
   }
 
-  function allset() {
-    document.getElementById("awaiting").style.display = "none";
-    document.getElementById("allset").style.display = "block";
+  async function send_payload(file, code_addr) {
+    return new Promise((resolve) => {
+      const ws = new WebSocket("ws://" + location.hostname + ":9020/send");
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        fetch(file)
+          .then(r => r.arrayBuffer())
+          .then(buffer => {
+            ws.send(buffer);
+            ws.close();
+            resolve({ success: true });
+          })
+          .catch(err => resolve({ success: false, message: `Fetch Failed: ${err}` }));
+      };
+
+      ws.onerror = () => {
+        resolve({ success: false, message: "WebSocket failed. Is sender running?" });
+      };
+    });
   }
 
-  function fail() {
+  function showState(id, message = "") {
+    document.getElementById("loader").style.display = "none";
     document.getElementById("awaiting").style.display = "none";
-    document.getElementById("fail").style.display = "block";
+    document.getElementById("allset").style.display = "none";
+    document.getElementById("fail").style.display = "none";
+    document.getElementById("badfw").style.display = "none";
+
+    const el = document.getElementById(id);
+    el.style.display = "block";
+    if (message) el.textContent = message;
+  }
+
+  function setFail(reason) {
+    const el = document.getElementById("fail");
+    el.textContent = reason || "Something went wrong :(";
+    showState("fail");
   }
 </script>
 
@@ -119,11 +151,7 @@
 <script src="./rop.js"></script>
 <script src="./syscalls.js"></script>
 <script src="./expl.js"></script>
-
-<!-- Stage 2 loader -->
 <script src="./userland.js"></script>
-
-<!-- Payload WebSocket Sender -->
 <script src="./payload.js"></script>
 
 <pre id="console"></pre>
