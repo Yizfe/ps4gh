@@ -67,20 +67,27 @@
       }
     }
 
-    function awaitpl() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("awaiting").style.display = "block";
+    async function awaitpl() {
+    document.getElementById("loader").style.display = "none";
+    document.getElementById("awaiting").style.display = "block";
 
-      if (typeof send_payload === "function") {
-        try {
-          send_payload("goldhen.bin");
-        } catch (e) {
-          alert("❌ Payload send error: " + e);
-        }
-      } else {
-        alert("❌ Payload sender not found.");
+    try {
+      const code_addr = new int64(0x26100000, 0x00000009);
+      const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
+
+      if (buffer != '926100000') {
+        fail();
+        return;
       }
+
+      await send_payload("goldhen.bin");
+      p.fcall(code_addr); // Launch GoldHEN
+      allset();
+    } catch (e) {
+      alert("❌ Payload launch error: " + e);
+      fail();
     }
+  }
 
     function allset() {
       document.getElementById("loader").style.display = "none";
