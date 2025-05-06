@@ -1,5 +1,5 @@
 function send_payload(fileName) {
-  const ip = "192.168.50.120"; // ✅ Change this to your PC's IP if needed
+  const ip = location.hostname;
   const port = 9020;
   const ws = new WebSocket(`ws://${ip}:${port}/send`);
   ws.binaryType = "arraybuffer";
