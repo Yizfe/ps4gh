@@ -49,25 +49,28 @@
     window.onload = function () {
       window.didload = 1;
       if (window.didpost == 1)
-        setTimeout(window.stage2, 1500);
-    }
+        setTimeout(stage2, 1500);
+    };
 
     window.postExpl = function () {
       window.didpost = 1;
       if (window.didload == 1)
-        setTimeout(window.stage2, 1500);
-    }
+        setTimeout(stage2, 1500);
+    };
 
-    function allset() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("allset").style.display = "block";
+    function stage2() {
+      try {
+        awaitpl(); // Call payload stage after exploit
+      } catch (e) {
+        alert("Stage2 error: " + e);
+        fail();
+      }
     }
 
     function awaitpl() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("awaiting").style.display = "block";
 
-      // Send only GoldHEN payload
       if (typeof send_payload === "function") {
         try {
           send_payload("goldhen.bin");
@@ -79,7 +82,12 @@
       }
     }
 
-    function fail(info) {
+    function allset() {
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("allset").style.display = "block";
+    }
+
+    function fail() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("fail").style.display = "block";
     }
@@ -109,10 +117,14 @@
     </ul>
   </div>
 
+  <!-- Core Exploit Files -->
   <script src="./rop.js"></script>
   <script src="./syscalls.js"></script>
   <script src="./expl.js"></script>
+
+  <!-- Payload Sender -->
   <script src="./payload.js"></script>
+
   <pre id="console"></pre>
 </body>
 </html>
