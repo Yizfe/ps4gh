@@ -28,7 +28,7 @@ window.stage2 = function () {
 };
 
 function send_payload(fileName, code_addr) {
-  const ip = "192.168.50.120"; // Change to your PC's IP if needed
+ const ip = location.hostname;
   const ws = new WebSocket(`ws://${ip}:9020/send`);
   ws.binaryType = "arraybuffer";
 
