@@ -83,6 +83,13 @@
       document.getElementById("loader").style.display = "none";
       document.getElementById("fail").style.display = "block";
     }
+
+    // Auto-start the payload load (this should trigger in homebrew.js)
+    window.onload = function () {
+      if (typeof send_payload === "function") {
+        send_payload("GoldHEN_2.4b18.3.bin");
+      }
+    };
   </script>
 
   <div id="loader" class="loader"></div>
@@ -105,10 +112,7 @@
 
   <div id="footer" class="credits">
     <ul style="list-style: none;padding-left:0">
-      <li>Bug from qwertyoruiopz</li>
-      <li>Homebrew thanks to flatz, xvortex</li>
-      <li>Implementation by specter</li>
-      <li>&lt3 OpenOrbis Team</li>
+      <li>Made with 💀 by <strong>@Yizfe</strong></li>
     </ul>
   </div>
 
