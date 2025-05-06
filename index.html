@@ -42,32 +42,33 @@
   </style>
 </head>
 <body style="margin:0;">
-  <script>
-    window.didload = 0;
-    window.didpost = 0;
 
-    window.onload = function () {
-      window.didload = 1;
-      if (window.didpost == 1)
-        setTimeout(stage2, 1500);
-    };
+<script>
+  window.didload = 0;
+  window.didpost = 0;
 
-    window.postExpl = function () {
-      window.didpost = 1;
-      if (window.didload == 1)
-        setTimeout(stage2, 1500);
-    };
+  window.onload = function () {
+    window.didload = 1;
+    if (window.didpost === 1)
+      setTimeout(stage2, 1500);
+  };
 
-    function stage2() {
-      try {
-        awaitpl(); // Call payload stage after exploit
-      } catch (e) {
-        alert("Stage2 error: " + e);
-        fail();
-      }
+  window.postExpl = function () {
+    window.didpost = 1;
+    if (window.didload === 1)
+      setTimeout(stage2, 1500);
+  };
+
+  function stage2() {
+    try {
+      awaitpl();
+    } catch (e) {
+      alert("Stage2 error: " + e);
+      fail();
     }
+  }
 
-    async function awaitpl() {
+  async function awaitpl() {
     document.getElementById("loader").style.display = "none";
     document.getElementById("awaiting").style.display = "block";
 
@@ -75,13 +76,12 @@
       const code_addr = new int64(0x26100000, 0x00000009);
       const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
-      if (buffer != '926100000') {
+      if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) {
         fail();
         return;
       }
 
-      await send_payload("goldhen.bin");
-      p.fcall(code_addr); // Launch GoldHEN
+      await send_payload("goldhen.bin", code_addr);
       allset();
     } catch (e) {
       alert("❌ Payload launch error: " + e);
@@ -89,51 +89,74 @@
     }
   }
 
-    function allset() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("allset").style.display = "block";
-    }
+  async function send_payload(file, code_addr) {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://192.168.50.47:9020/send"); // change this IP if needed
+      ws.binaryType = 'arraybuffer';
 
-    function fail() {
-      document.getElementById("loader").style.display = "none";
-      document.getElementById("fail").style.display = "block";
-    }
-  </script>
+      ws.onopen = () => {
+        fetch(file)
+          .then(r => r.arrayBuffer())
+          .then(buffer => {
+            ws.send(buffer);
+            ws.close();
+            p.fcall(code_addr);
+            resolve();
+          })
+          .catch(err => reject("❌ Fetch failed: " + err));
+      };
 
-  <div id="loader" class="loader"></div>
+      ws.onerror = () => {
+        reject("❌ WebSocket failed. Is sender app running on port 9020?");
+      };
+    });
+  }
 
-  <div id="awaiting" class="info" style="display:none;">
-    Awaiting Payload...
-  </div>
+  function allset() {
+    document.getElementById("awaiting").style.display = "none";
+    document.getElementById("allset").style.display = "block";
+  }
 
-  <div id="allset" class="info" style="display:none;">
-    You're all set!
-  </div>
+  function fail() {
+    document.getElementById("awaiting").style.display = "none";
+    document.getElementById("fail").style.display = "block";
+  }
+</script>
 
-  <div id="fail" class="info" style="display:none;">
-    Something went wrong :(
-  </div>
+<div id="loader" class="loader"></div>
 
-  <div id="badfw" class="info" style="display:none;">
-    Only firmware 5.05 is supported!
-  </div>
+<div id="awaiting" class="info" style="display:none;">
+  Awaiting Payload...
+</div>
 
-  <div id="footer" class="credits">
-    <ul style="list-style: none;padding-left:0">
-      <li>Made with 💀 by <strong>@Yizfe</strong></li>
-    </ul>
-  </div>
+<div id="allset" class="info" style="display:none;">
+  You're all set!
+</div>
 
-  <!-- Core Exploit Files -->
-  <script src="./rop.js"></script>
-  <script src="./syscalls.js"></script>
-  <script src="./expl.js"></script>
+<div id="fail" class="info" style="display:none;">
+  Something went wrong :(
+</div>
 
-  <!-- Payload Sender -->
-  <script src="./userland.js"></script>
-  <script src="./payload.js"></script>
-  
+<div id="badfw" class="info" style="display:none;">
+  Only firmware 5.05 is supported!
+</div>
 
-  <pre id="console"></pre>
+<div id="footer" class="credits">
+  <ul style="list-style: none;padding-left:0">
+    <li>Made with 💀 by <strong>@Yizfe</strong></li>
+  </ul>
+</div>
+
+<!-- Exploit chain files -->
+<script src="./rop.js"></script>
+<script src="./syscalls.js"></script>
+<script src="./expl.js"></script>
+
+<!-- Payload stage -->
+<script src="./userland.js"></script>
+<script src="./payload.js"></script>
+
+<pre id="console"></pre>
+
 </body>
 </html>
