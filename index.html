@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PS4Brew 5.05</title>
+  <title>PS4 GoldHEN Injector 5.05</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     .loader {
@@ -17,25 +17,27 @@
       height: 120px;
       -webkit-animation: spin 1s linear infinite;
     }
+
     .info {
-      overflow: hidden;
       position: fixed;
       top: 50%;
       left: 50%;
+      transform: translate(-50%, -50%);
       font-size: 45px;
       font-family: sans-serif;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      display: none;
     }
+
     .credits {
       position: fixed;
       top: 90%;
       left: 50%;
+      transform: translate(-50%, -90%);
       font-size: 16px;
       font-family: sans-serif;
       text-align: center;
-      transform: translate(-50%, -90%);
     }
+
     @-webkit-keyframes spin {
       0% { -webkit-transform: rotate(0deg); }
       100% { -webkit-transform: rotate(360deg); }
@@ -50,111 +52,85 @@
 
   window.onload = function () {
     window.didload = 1;
-    if (window.didpost === 1)
-      setTimeout(stage2, 1500);
+    if (window.didpost === 1) setTimeout(stage2, 1500);
   };
 
   window.postExpl = function () {
     window.didpost = 1;
-    if (window.didload === 1)
-      setTimeout(stage2, 1500);
+    if (window.didload === 1) setTimeout(stage2, 1500);
   };
 
   function stage2() {
     try {
       awaitpl();
-    } catch (e) {
-      setFail(`Stage2 Error: ${e}`);
-    }
-  }
-
-  async function awaitpl() {
-    showState("awaiting");
-
-    try {
       const code_addr = new int64(0x26100000, 0x00000009);
       const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
-      if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) {
-        setFail("sys_mmap failed.");
-        return;
-      }
+      if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) return fail();
 
-      const result = await send_payload("goldhen.bin", code_addr);
-      if (result.success) {
-        p.fcall(code_addr);
-        showState("allset");
-      } else {
-        setFail(result.message);
-      }
+      const ws = new WebSocket("ws://192.168.50.47:9020/send"); // ✅ Update IP if needed
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        fetch("goldhen.bin")
+          .then(r => r.arrayBuffer())
+          .then(payload => {
+            ws.send(payload);
+            ws.close();
+            p.fcall(code_addr);
+            allset();
+          })
+          .catch(() => fail());
+      };
+
+      ws.onerror = () => fail();
     } catch (e) {
-      setFail(`Payload Launch Error: ${e}`);
+      fail();
     }
   }
 
-  async function send_payload(file, code_addr) {
-    return new Promise((resolve) => {
-      const ws = new WebSocket("ws://" + location.hostname + ":9020/send");
-      ws.binaryType = 'arraybuffer';
-
-      ws.onopen = () => {
-        fetch(file)
-          .then(r => r.arrayBuffer())
-          .then(buffer => {
-            ws.send(buffer);
-            ws.close();
-            resolve({ success: true });
-          })
-          .catch(err => resolve({ success: false, message: `Fetch Failed: ${err}` }));
-      };
-
-      ws.onerror = () => {
-        resolve({ success: false, message: "WebSocket failed. Is sender running?" });
-      };
-    });
+  function awaitpl() {
+    hideAll();
+    document.getElementById("awaiting").style.display = "block";
   }
 
-  function showState(id, message = "") {
+  function allset() {
+    hideAll();
+    document.getElementById("allset").style.display = "block";
+  }
+
+  function fail() {
+    hideAll();
+    document.getElementById("fail").style.display = "block";
+  }
+
+  function hideAll() {
     document.getElementById("loader").style.display = "none";
     document.getElementById("awaiting").style.display = "none";
     document.getElementById("allset").style.display = "none";
     document.getElementById("fail").style.display = "none";
-    document.getElementById("badfw").style.display = "none";
-
-    const el = document.getElementById(id);
-    el.style.display = "block";
-    if (message) el.textContent = message;
-  }
-
-  function setFail(reason) {
-    const el = document.getElementById("fail");
-    el.textContent = reason || "Something went wrong :(";
-    showState("fail");
   }
 </script>
 
-<!-- UI States -->
 <div id="loader" class="loader"></div>
-<div id="awaiting" class="info" style="display:none;">Awaiting Payload...</div>
-<div id="allset" class="info" style="display:none;">You're all set!</div>
-<div id="fail" class="info" style="display:none;">Something went wrong :(</div>
-<div id="badfw" class="info" style="display:none;">Only firmware 5.05 is supported!</div>
+<div id="awaiting" class="info">Awaiting Payload...</div>
+<div id="allset" class="info">You're all set!</div>
+<div id="fail" class="info">Something went wrong :(</div>
 
-<!-- Footer -->
-<div id="footer" class="credits">
+<div class="credits">
   <ul style="list-style: none;padding-left:0">
-    <li>Made with 💀 by <strong>@Yizfe</strong></li>
+    <li>Bug from qwertyoruiopz</li>
+    <li>Homebrew thanks to flatz, xvortex</li>
+    <li>Exploit base by specter</li>
+    <li>GoldHEN loader by <strong>you 😎</strong></li>
   </ul>
 </div>
 
-<!-- Core Exploit Chain -->
+<!-- Exploit logic -->
 <script src="./rop.js"></script>
 <script src="./syscalls.js"></script>
 <script src="./expl.js"></script>
 <script src="./userland.js"></script>
-<script src="./payload.js"></script>
-
 <pre id="console"></pre>
-
 </body>
 </html>
