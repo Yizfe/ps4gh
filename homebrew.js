@@ -2366,3 +2366,12 @@ function writeHomebrewEN(p, addr) {
   p.write4(addr.add32(0x000024f0), 0x69727066);
   p.write4(addr.add32(0x000024f4), 0x0066746e);
 }
+
+try {
+  send_payload("GoldHEN_2.4b18.3.bin", function () {
+    alert("✅ GoldHEN payload sent successfully!");
+  });
+} catch (e) {
+  alert("❌ Payload send failed: " + e);
+}
+
