@@ -405,11 +405,10 @@ if (attempts >= 10000) {
 var code_addr = new int64(0x26100000, 0x00000009);
 var buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
-// Only proceed if buffer is valid
 if (buffer == '926100000') {
-  writeGoldHEN(p, code_addr); // replace this with your actual GoldHEN payload writer
-  p.fcall(code_addr); // launch
+  p.fcall(code_addr); // assumes payload was sent via send_payload()
 }
+
 
 
 
