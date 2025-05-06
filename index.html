@@ -68,7 +68,7 @@
 
       if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) return fail();
 
-      const ws = new WebSocket("ws://192.168.50.47:9020/send"); // ✅ Update IP if needed
+      const ws = new WebSocket("ws://192.168.50.120:9020/send"); // ✅ Update IP if needed
       ws.binaryType = "arraybuffer";
 
       ws.onopen = () => {
