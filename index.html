@@ -81,35 +81,13 @@
         return;
       }
 
-      await send_payload("goldhen.bin", code_addr);
+      await send_payload("goldhen.bin");
+      p.fcall(code_addr); // Launch GoldHEN
       allset();
     } catch (e) {
       alert("❌ Payload launch error: " + e);
       fail();
     }
-  }
-
-  async function send_payload(file, code_addr) {
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket("ws://192.168.50.47:9020/send"); // change this IP if needed
-      ws.binaryType = 'arraybuffer';
-
-      ws.onopen = () => {
-        fetch(file)
-          .then(r => r.arrayBuffer())
-          .then(buffer => {
-            ws.send(buffer);
-            ws.close();
-            p.fcall(code_addr);
-            resolve();
-          })
-          .catch(err => reject("❌ Fetch failed: " + err));
-      };
-
-      ws.onerror = () => {
-        reject("❌ WebSocket failed. Is sender app running on port 9020?");
-      };
-    });
   }
 
   function allset() {
@@ -123,37 +101,29 @@
   }
 </script>
 
+<!-- UI States -->
 <div id="loader" class="loader"></div>
+<div id="awaiting" class="info" style="display:none;">Awaiting Payload...</div>
+<div id="allset" class="info" style="display:none;">You're all set!</div>
+<div id="fail" class="info" style="display:none;">Something went wrong :(</div>
+<div id="badfw" class="info" style="display:none;">Only firmware 5.05 is supported!</div>
 
-<div id="awaiting" class="info" style="display:none;">
-  Awaiting Payload...
-</div>
-
-<div id="allset" class="info" style="display:none;">
-  You're all set!
-</div>
-
-<div id="fail" class="info" style="display:none;">
-  Something went wrong :(
-</div>
-
-<div id="badfw" class="info" style="display:none;">
-  Only firmware 5.05 is supported!
-</div>
-
+<!-- Footer -->
 <div id="footer" class="credits">
   <ul style="list-style: none;padding-left:0">
     <li>Made with 💀 by <strong>@Yizfe</strong></li>
   </ul>
 </div>
 
-<!-- Exploit chain files -->
+<!-- Core Exploit Chain -->
 <script src="./rop.js"></script>
 <script src="./syscalls.js"></script>
 <script src="./expl.js"></script>
 
-<!-- Payload stage -->
+<!-- Stage 2 loader -->
 <script src="./userland.js"></script>
+
+<!-- Payload WebSocket Sender -->
 <script src="./payload.js"></script>
 
 <pre id="console"></pre>
