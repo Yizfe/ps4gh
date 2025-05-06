@@ -401,13 +401,23 @@ if (attempts >= 10000) {
     return ptr;
   }
 
-  // Load GoldHEN payload only
-var code_addr = new int64(0x26100000, 0x00000009);
-var buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
+ function writeGoldHEN(p, code_addr) {
+  fetch("goldhen.bin")
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      var payload = new Uint8Array(buffer);
+      var payload_ptr = code_addr;
 
-if (buffer == '926100000') {
-  p.fcall(code_addr); // assumes payload was sent via send_payload()
+      for (var i = 0; i < payload.length; i++) {
+        p.write1(payload_ptr.add32(i), payload[i]);
+      }
+
+      // Launch after written
+      p.fcall(code_addr);
+    })
+    .catch(err => alert("❌ Failed to load GoldHEN payload: " + err));
 }
+
 
 
 
