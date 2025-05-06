@@ -1,7 +1,7 @@
 function send_payload(file) {
   alert("📡 Connecting to payload server...");
 
-  var ws = new WebSocket("ws://" + location.hostname + ":9020/");
+  var ws = new WebSocket("ws://192.168.50.120:9020/");
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = function () {
