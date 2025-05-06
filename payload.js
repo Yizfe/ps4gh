@@ -1,5 +1,5 @@
 function send_payload(file) {
-  var ws = new WebSocket("ws://192.168.50.47:9020/send"); // <== replace with your PC IP
+  var ws = new WebSocket("ws://192.168.50.120:9020/send"); // <== replace with your PC IP
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = function () {
