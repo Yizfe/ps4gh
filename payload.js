@@ -1,16 +1,31 @@
-function send_payload(file) {
-  var ws = new WebSocket("ws://192.168.50.47:9020/send"); // <== replace with your PC IP
-  ws.binaryType = 'arraybuffer';
+function send_payload(fileName) {
+  const ip = "192.168.50.47"; // ✅ Replace with your PC IP if different
+  const port = 9020;
+  const url = `ws://${ip}:${port}/send`;
+  const ws = new WebSocket(url);
+
+  ws.binaryType = "arraybuffer";
 
   ws.onopen = function () {
-    fetch(file)
-      .then(r => r.arrayBuffer())
-      .then(payload => ws.send(payload))
-      .then(() => ws.close())
-      .catch(err => alert("❌ Payload load failed: " + err));
+    console.log(`[INFO] WebSocket connected: ${url}`);
+    
+    fetch(fileName)
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then(payload => {
+        ws.send(payload);
+        console.log(`[INFO] Sent payload: ${fileName}`);
+        ws.close();
+      })
+      .catch(err => {
+        alert(`❌ Failed to send payload '${fileName}': ${err.message}`);
+      });
   };
 
-  ws.onerror = function () {
-    alert("❌ WebSocket error. Is your payload sender running on port 9020?\nMake sure your PS4 and PC are on the same network.");
+  ws.onerror = function (err) {
+    alert("❌ WebSocket error.\nMake sure your payload sender is running on port 9020.\nCheck that your PC and PS4 are on the same network.");
+    console.error("[ERROR] WebSocket:", err);
   };
 }
