@@ -1,63 +1,65 @@
+// userland.js - Minimal GoldHEN loader
+
 var p;
 
-var print = function (msg) {
-  if (typeof msg === 'undefined') msg = '❌ Unknown error';
-  const el = document.getElementById("console");
-  if (el) el.innerHTML += msg + "<br>";
-  console.log(msg);
+// Optional console printing
+var print = function (string) {
+  document.getElementById("console").innerHTML += string + "\n";
 };
 
+// Write GoldHEN binary into memory
+function writeGoldHEN(p, code_addr) {
+  fetch("goldhen.bin")
+    .then(resp => resp.arrayBuffer())
+    .then(buffer => {
+      const payload = new Uint8Array(buffer);
+      for (let i = 0; i < payload.length; i++) {
+        p.write1(code_addr.add32(i), payload[i]);
+      }
+      print("[INFO] GoldHEN payload written to memory");
+      p.fcall(code_addr);
+      allset();
+    })
+    .catch(err => fail("Failed to load GoldHEN: " + err));
+}
+
+// Kernel exploit stage
 window.stage2 = function () {
   try {
-    window.stage2_();
-  } catch (e) {
-    print("Stage2 error: " + (e.message || e));
-    fail();
-  }
-};
+    p = window.prim;
+    const isKernelPatched = p.syscall("sys_setuid", 0);
 
-window.stage2_ = async function () {
-  p = window.prim;
-
-  // Try mmap memory for payload
-  const code_addr = new int64(0x26100000, 0x00000009);
-  const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
-
-  if (!(buffer.low === 0x26100000 && buffer.hi === 0x00000009)) {
-    print("❌ sys_mmap failed. Returned: " + buffer.toString());
-    return fail();
-  }
-
-  // Show UI state
-  document.getElementById("loader").style.display = "none";
-  document.getElementById("awaiting").style.display = "block";
-
-  try {
-    const payload = await fetch("goldhen.bin").then(r => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.arrayBuffer();
-    });
-
-    const bytes = new Uint8Array(payload);
-    for (let i = 0; i < bytes.length; i++) {
-      p.write1(code_addr.add32(i), bytes[i]);
+    if (isKernelPatched != '0') {
+      // Not patched, load kernel.js
+      const sc = document.createElement("script");
+      sc.src = "kernel.js";
+      document.body.appendChild(sc);
+      return;
     }
 
-    p.fcall(code_addr);
-    print("✅ GoldHEN payload injected successfully.");
-    return allset();
+    // Already patched, load GoldHEN
+    const code_addr = new int64(0x26100000, 0x00000009);
+    const buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
+
+    if (buffer.low === 0x26100000 && buffer.hi === 0x00000009) {
+      writeGoldHEN(p, code_addr);
+    } else {
+      fail("sys_mmap failed");
+    }
   } catch (e) {
-    print("❌ Payload injection failed: " + (e.message || e));
-    return fail();
+    fail("Stage2 error: " + e);
   }
 };
 
 function allset() {
+  document.getElementById("loader").style.display = "none";
   document.getElementById("awaiting").style.display = "none";
   document.getElementById("allset").style.display = "block";
 }
 
-function fail() {
+function fail(msg) {
+  document.getElementById("loader").style.display = "none";
   document.getElementById("awaiting").style.display = "none";
   document.getElementById("fail").style.display = "block";
+  if (msg) print("[ERROR] " + msg);
 }
