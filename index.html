@@ -9,44 +9,32 @@
       left: 50%;
       top: 50%;
       margin: -75px 0 0 -75px;
-
       border: 10px solid #f3f3f3;
       border-radius: 50%;
       border-top: 10px solid #044595;
       border-left: 10px solid #044595;
       width: 120px;
       height: 120px;
-
       -webkit-animation: spin 1s linear infinite;
     }
-
     .info {
       overflow: hidden;
       position: fixed;
-      position: absolute;
       top: 50%;
       left: 50%;
-
       font-size: 45px;
       font-family: sans-serif;
-
       transform: translate(-50%, -50%);
     }
-
     .credits {
-      overflow: hidden;
       position: fixed;
-      position: absolute;
       top: 90%;
       left: 50%;
-
       font-size: 16px;
       font-family: sans-serif;
       text-align: center;
-
       transform: translate(-50%, -90%);
     }
-
     @-webkit-keyframes spin {
       0% { -webkit-transform: rotate(0deg); }
       100% { -webkit-transform: rotate(360deg); }
@@ -79,9 +67,13 @@
       document.getElementById("loader").style.display = "none";
       document.getElementById("awaiting").style.display = "block";
 
-      // ✅ Now triggers payload when you see "Awaiting Payload..."
+      // Send only GoldHEN payload
       if (typeof send_payload === "function") {
-       send_payload("goldhen.bin");
+        try {
+          send_payload("goldhen.bin");
+        } catch (e) {
+          alert("❌ Payload send error: " + e);
+        }
       } else {
         alert("❌ Payload sender not found.");
       }
