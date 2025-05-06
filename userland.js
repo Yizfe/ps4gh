@@ -412,11 +412,6 @@ window.stage2_ = function () {
       var code_addr = new int64(0x26100000, 0x00000009);
       var buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
-      // Load HEN-VTX
-      if (buffer == '926100000') {
-        writeHomebrewEN(p, code_addr.add32(0x100000));
-      }
-
       // Launch HEN-VTX
       p.fcall(code_addr);
 
