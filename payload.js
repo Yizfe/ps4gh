@@ -1,27 +1,33 @@
-function send_payload(filename) {
-  var req = new XMLHttpRequest();
-  req.open("GET", filename, true);
-  req.responseType = "arraybuffer";
+function send_payload(file) {
+  alert("📡 Connecting to payload server...");
 
-  req.onload = function () {
-    var payload = new Uint8Array(req.response);
-    var socket = new WebSocket("ws://" + location.hostname + ":9020/");
-    socket.binaryType = "arraybuffer";
+  var ws = new WebSocket("ws://" + location.hostname + ":9020/");
+  ws.binaryType = 'arraybuffer';
 
-    socket.onopen = function () {
-      socket.send(payload);
-      socket.close();
-      alert("✅ GoldHEN payload sent!");
-    };
+  ws.onopen = function () {
+    alert("✅ Connected! Fetching payload: " + file);
 
-    socket.onerror = function () {
-      alert("❌ WebSocket failed. Make sure PS4 is Awaiting Payload.");
-    };
+    fetch(file)
+      .then(response => {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.arrayBuffer();
+      })
+      .then(payload => {
+        alert("📤 Sending payload...");
+        ws.send(payload);
+        alert("✅ Payload sent successfully.");
+        ws.close();
+      })
+      .catch(err => {
+        alert("❌ Failed to fetch/send payload:\n" + err);
+      });
   };
 
-  req.onerror = function () {
-    alert("❌ Could not fetch " + filename);
+  ws.onerror = function () {
+    alert("❌ WebSocket error. Is your payload sender running on port 9020?\nMake sure your PS4 and PC are on the same network.");
   };
 
-  req.send();
+  ws.onclose = function () {
+    alert("🔌 WebSocket connection closed.");
+  };
 }
