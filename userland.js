@@ -420,13 +420,15 @@ if (attempts >= 10000) {
 
 
 var code_addr = new int64(0x26100000, 0x00000009);
-var buffer = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
+var result = p.syscall("sys_mmap", code_addr, 0x300000, 7, 0x41000, -1, 0);
 
-if (buffer.low === 0x26100000 && buffer.hi === 0x00000009) {
+// If mmap succeeded, it should return the same address requested
+if (result.toString() === code_addr.toString()) {
   writeGoldHEN(p, code_addr);
 } else {
-  alert("❌ sys_mmap failed, buffer: " + buffer.toString());
+  alert("❌ mmap failed. Returned: " + result.toString());
 }
+
 
 
 
